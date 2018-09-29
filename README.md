@@ -3,8 +3,8 @@
 You must have nodjs installed: https://nodejs.org. Make sure Python 2 is installed.
 
 ```
-git clone https://github.com/lupyanlab/Nameability
-cd Nameability
+git clone https://github.com/lupyanlab/ChangeDetection
+cd ChangeDetection
 npm install
 npm start
 ```
@@ -22,7 +22,7 @@ If you just need to build `prod/` , then use this command:
 npm run prod
 ```
 
-Then, go to http://localhost:7072
+Then, go to http://localhost:7080
 
 
 ## Switching from CSV to JSON and Vice Versa

@@ -1,9 +1,9 @@
 import demographicsQuestions from "./demographics.js";
 
-const PORT = 7072;
+const PORT = 7080;
 const FULLSCREEN = false;
 
-export function getTrials(workerId='NA', assignmentId='NA', hitId='NA', setnum='NA') {
+export function getTrials(workerId='NA', assignmentId='NA', hitId='NA') {
   
   $("#loading").html('Loading trials... please wait. </br> <img src="img/preloader.gif">')
   
@@ -13,7 +13,7 @@ export function getTrials(workerId='NA', assignmentId='NA', hitId='NA', setnum='
       url: 'http://'+document.domain+':'+PORT+'/trials',
       type: 'POST',
       contentType: 'application/json',
-      data: JSON.stringify({workerId: workerId, setnum: setnum}),
+      data: JSON.stringify({workerId: workerId}),
       success: function (data) {
           console.log(data);
           $("#loading").remove();
@@ -61,31 +61,31 @@ function runExperiment(trials, workerId, assignmentId, hitId, PORT, FULLSCREEN) 
     }
     return false;
   };
-  // declare the block.
-  var consent = {
-    type: 'external-html',
-    url: "./consent.html",
-    cont_btn: "start",
-    check_fn: check_consent
-  };
+  // // declare the block.
+  // var consent = {
+  //   type: 'external-html',
+  //   url: "./consent.html",
+  //   cont_btn: "start",
+  //   check_fn: check_consent
+  // };
 
-  timeline.push(consent);
+  // timeline.push(consent);
 
   let continue_space =
     "<div class='right small'>Press SPACE to continue.</div>";
 
-  let instructions = {
-    type: "instructions",
-    key_forward: 'space',
-    key_backward: 'backspace',
-    pages: [
-      `<p>Your task is to describe the image that is inside the red rectangle so that someone else can pick it out from a selection of the other images when shown your description.  <b>Please make your description as short and simple as possible, while ensuring that the description could not be confused with any of the other images. </b>
-      <p><b>If any of the other images are the same, you do not need to worry about distinguishing your description from these items.</b> You will be asked to make a total of 30 descriptions. Please answer carefully to all items. Some images may be simpler to describe than others. Responding randomly or carelessly will result in a decline in payment. At the end, you will get a completion code. <p> <img src="img/demo.png" style="width:355px;height:230px;"> <p>  <b> Example 1 </b> <p> Here you could simply respond:  <b> Circle.  </b>  <p> <img src="img/demo2.png" style="width:355px;height:230px;"> <p> <b> Example 2 </b> <p> For this example you might say:  <b> Three thick vertical lines.  </b> <p> <b> DO NOT use the location of the red rectangle for your description i.e., 'top right'. Your description must be understood even if the order of the images are mixed. </b> <p>
-            </p> ${continue_space}`
-    ]
-  };
+  // let instructions = {
+  //   type: "instructions",
+  //   key_forward: 'space',
+  //   key_backward: 'backspace',
+  //   pages: [
+  //     `<p>Your task is to describe the image that is inside the red rectangle so that someone else can pick it out from a selection of the other images when shown your description.  <b>Please make your description as short and simple as possible, while ensuring that the description could not be confused with any of the other images. </b>
+  //     <p><b>If any of the other images are the same, you do not need to worry about distinguishing your description from these items.</b> You will be asked to make a total of 30 descriptions. Please answer carefully to all items. Some images may be simpler to describe than others. Responding randomly or carelessly will result in a decline in payment. At the end, you will get a completion code. <p> <img src="img/demo.png" style="width:355px;height:230px;"> <p>  <b> Example 1 </b> <p> Here you could simply respond:  <b> Circle.  </b>  <p> <img src="img/demo2.png" style="width:355px;height:230px;"> <p> <b> Example 2 </b> <p> For this example you might say:  <b> Three thick vertical lines.  </b> <p> <b> DO NOT use the location of the red rectangle for your description i.e., 'top right'. Your description must be understood even if the order of the images are mixed. </b> <p>
+  //           </p> ${continue_space}`
+  //   ]
+  // };
 
-  timeline.push(instructions);
+  // timeline.push(instructions);
 
   // keeps track of current trial progression
   // and used for the progress bar
@@ -99,7 +99,8 @@ function runExperiment(trials, workerId, assignmentId, hitId, PORT, FULLSCREEN) 
     // responses
     const trial_number = index + 1;
 
-    images.push("images/" + trial.Image);
+    images.push("images/" + trial.picture + '-a.jpg');
+    images.push("images/" + trial.picture + '-b.jpg');
 
     // Empty Response Data to be sent to be collected
     let response = {
@@ -107,36 +108,26 @@ function runExperiment(trials, workerId, assignmentId, hitId, PORT, FULLSCREEN) 
       assignmentId: assignmentId,
       hitId: hitId,
       set: trial.set,
-      ProblemType: trial.ProblemType,
-      PartID: trial.PartID,
-      Image: trial.Image,
-      file: trial.file,
-      Message: trial.Message,
-      setnum: trial.setnum,
+      picture: trial.picture,
       expTimer: -1,
       response: -1,
       trial_number: trial_number,
       rt: -1
     };
     
-    const image = trial.Image;
+    const image = trial.picture;
     
     let stimulus = /*html*/`
         <h5 style="text-align:center;margin-bottom:5%;margin-top:0;">Trial ${trial_number} of ${num_trials}</h5>
-        <div style="width:100%;">
-          <img src="images/${image}" alt="${image}"/>   
-        </div>
     `;
     
     // Picture Trial
     let jsPsychTrial = {
-      type: "text-area",
+      type: "change-detection",
 
       stimulus: stimulus,
-      question: trial.Message,
-      placeholder: "Your answer here...",
-      min_chars_required: 3,
-      trim_response_string: true,
+      left_image: `${image}-a.jpg`,
+      right_image: `${image}-b.jpg`,
 
       on_finish: function(data) {
         // response.response = String.fromCharCode(data.key_press);

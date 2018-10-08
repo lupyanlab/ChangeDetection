@@ -118,7 +118,7 @@ function runExperiment(trials, workerId, assignmentId, hitId, PORT, FULLSCREEN) 
     const image = trial.picture;
     
     let stimulus = /*html*/`
-        <h5 style="text-align:center;margin-bottom:5%;margin-top:0;">Trial ${trial_number} of ${num_trials}</h5>
+        <h5 style="text-align:center;margin-top:0;">Trial ${trial_number} of ${num_trials}</h5>
     `;
     
     // Picture Trial
@@ -126,8 +126,10 @@ function runExperiment(trials, workerId, assignmentId, hitId, PORT, FULLSCREEN) 
       type: "change-detection",
 
       stimulus: stimulus,
-      left_image: `${image}-a.jpg`,
-      right_image: `${image}-b.jpg`,
+      unmodified_image: `images/${image}-a.jpg`,
+      modified_image: `images/${image}-b.jpg`,
+      interval_duration: 1600,
+      timeout: 60000,
 
       on_finish: function(data) {
         // response.response = String.fromCharCode(data.key_press);

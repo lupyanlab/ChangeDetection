@@ -12,39 +12,72 @@ jsPsych.plugins["change-detection"] = (function() {
         type: jsPsych.plugins.parameterType.STRING,
         default_value: ''
       },
-      left_image: {
+      unmodified_image: {
         type: jsPsych.plugins.parameterType.IMAGE, // INT, IMAGE, KEYCODE, STRING, FUNCTION, FLOAT
         default_value: undefined
       },
-      right_image: {
+      modified_image: {
         type: jsPsych.plugins.parameterType.IMAGE,
         default_value: undefined
-      }
+      },
+      timeout: {
+        type: jsPsych.plugins.parameterType.INT,
+        default_value: undefined
+      },
+      interval_duration: {
+        type: jsPsych.plugins.parameterType.INT,
+        default_value: undefined
+      },
     }
   };
 
   plugin.trial = function(display_element, trial) {
     display_element.innerHTML = /*html*/ `
     ${trial.stimulus}
-    <div style="display:flex;justify-content:space-between">
-      <img id="left-image" src="images/${trial.left_image}" alt="${trial.left_image}" style="width:49%;height:49%;" />   
-      <img id="right-image" src="images/${trial.right_image}" alt="${trial.right_image}" style="width:49%;height:49%;" />   
+    <div style="display:flex;justify-content:space-between;flex-direction:column;">
+      <h4 id="image-title">Unmodified</h4>
+      <img id="image" src="${trial.unmodified_image}" alt="${trial.unmodified_image}" style="width:100%;height:100%;" ondragstart="return false;" />   
     </div>`;
 
-    display_element.querySelector('#left-image').addEventListener('click', (e) => {
-      alert(`clicked left picture\nx: ${e.offsetX}, y: ${e.offsetY}`);
+    const imageTitleElem = document.getElementById('image-title');
+    const imageElem = document.getElementById('image');
+    let modified = false;
+
+    const imageInterval = window.setInterval(() => {
+      modified = !modified;
+      imageElem.setAttribute('src', modified ? trial.modified_image : trial.unmodified_image);
+      imageTitleElem.innerHTML = modified ? 'Modified' : 'Unmodified';
+    }, trial.interval_duration);
+
+    const goToClickOnChangeStep = () => {
+      window.clearInterval(imageInterval);
+      imageElem.setAttribute('src', trial.unmodified_image);
+      imageTitleElem.innerHTML = 'Click on the change.'
+      imageElem.addEventListener('click', (e) => {
+        alert(`clicked on picture\nx: ${e.offsetX}, y: ${e.offsetY}`);
+        jsPsych.finishTrial(trial_data);
+      });
+    };
+
+    window.setTimeout(() => {
+      goToClickOnChangeStep();
+    }, trial.timeout);
+
+    const handleSpacePress = () => {
+      goToClickOnChangeStep();
+    };
+
+    const keyboardListener = jsPsych.pluginAPI.getKeyboardResponse({
+      callback_function: handleSpacePress,
+      valid_responses: ['space'],
+      rt_method: 'date',
+      persist: false,
+      allow_held_key: false
     });
 
-    display_element.querySelector('#right-image').addEventListener('click', (e) => {
-      alert(`clicked right picture\nx: ${e.offsetX}, y: ${e.offsetY}`);
-    })
-
-    // data saving
     var trial_data = {
       parameter_name: "parameter value"
     };
-
-    // end trial
   };
 
   return plugin;

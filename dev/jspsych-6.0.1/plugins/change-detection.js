@@ -88,7 +88,7 @@ jsPsych.plugins["change-detection"] = (function() {
       crosshairElem.style.display = 'none';
       imageElem.style.display = '';
       imageElem.setAttribute('src', trial.unmodified_image);
-      imageTitleElem.innerHTML = 'Click on the change.'
+      imageTitleElem.innerHTML = 'Click on what changed..'
       imageElem.addEventListener('click', (e) => {
         const trial_data = {
           x: e.offsetX,

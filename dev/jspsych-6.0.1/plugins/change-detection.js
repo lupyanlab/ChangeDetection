@@ -24,7 +24,19 @@ jsPsych.plugins["change-detection"] = (function() {
         type: jsPsych.plugins.parameterType.INT,
         default_value: undefined
       },
-      interval_duration: {
+      image_interval_duration: {
+        type: jsPsych.plugins.parameterType.INT,
+        default_value: undefined
+      },
+      white_screen_interval_duration: {
+        type: jsPsych.plugins.parameterType.INT,
+        default_value: undefined
+      },
+      initial_white_screen_duration: {
+        type: jsPsych.plugins.parameterType.INT,
+        default_value: undefined
+      },
+      initial_fixation_duration: {
         type: jsPsych.plugins.parameterType.INT,
         default_value: undefined
       },
@@ -35,26 +47,53 @@ jsPsych.plugins["change-detection"] = (function() {
     display_element.innerHTML = /*html*/ `
     ${trial.stimulus}
     <div style="display:flex;justify-content:space-between;flex-direction:column;">
-      <h4 id="image-title">Unmodified</h4>
-      <img id="image" src="${trial.unmodified_image}" alt="${trial.unmodified_image}" style="width:100%;height:100%;" ondragstart="return false;" />   
+      <h4 id="image-title">...</h4>
+      <div id="crosshair" style="width:1024px;height:768px;display:flex;justify-content: center;align-items: center;border: dashed;">
+        <div class="crosshair-container" style="position: relative;height: 5em;width: 5em;">
+          <div class="crosshair-vertical" style="position: absolute;height: 100%;width: 10%;left: 45%;background-color: black;"></div>
+          <div class="crosshair-horizantal" style="position: absolute;height: 10%;width: 100%;top: 45%;background-color: black;"></div>
+        </div>
+      </div>
+      <img id="image" src="${trial.modified_image}" alt="image-stim" style="width:1024px;height:768px;display:none;" ondragstart="return false;" />   
     </div>`;
 
     const imageTitleElem = document.getElementById('image-title');
     const imageElem = document.getElementById('image');
-    let modified = false;
+    const crosshairElem = document.getElementById('crosshair');
+    let modified = true;
+    let switchingImages = false;
+    
+    let imageTimeout;
 
-    const imageInterval = window.setInterval(() => {
+    const showWhiteScreen = () => {
+      imageElem.style.display = 'none';
+      imageTimeout = window.setTimeout(switchImage, trial.white_screen_interval_duration);
+    };
+
+    const switchImage = () => {
+      switchingImages = true;
+      imageElem.style.display = '';
       modified = !modified;
       imageElem.setAttribute('src', modified ? trial.modified_image : trial.unmodified_image);
-      imageTitleElem.innerHTML = modified ? 'Modified' : 'Unmodified';
-    }, trial.interval_duration);
+      imageTimeout = window.setTimeout(showWhiteScreen, trial.image_interval_duration);
+    };
+
+    imageTimeout = window.setTimeout(() => {
+      crosshairElem.style.display = 'none';
+      imageTimeout = window.setTimeout(switchImage, trial.initial_white_screen_duration);
+    }, trial.initial_fixation_duration);
 
     const goToClickOnChangeStep = () => {
-      window.clearInterval(imageInterval);
+      window.clearTimeout(imageTimeout);
+      crosshairElem.style.display = 'none';
+      imageElem.style.display = '';
       imageElem.setAttribute('src', trial.unmodified_image);
       imageTitleElem.innerHTML = 'Click on the change.'
       imageElem.addEventListener('click', (e) => {
-        alert(`clicked on picture\nx: ${e.offsetX}, y: ${e.offsetY}`);
+        const trial_data = {
+          x: e.offsetX,
+          y: e.offsetY,
+        };
         jsPsych.finishTrial(trial_data);
       });
     };
@@ -64,20 +103,18 @@ jsPsych.plugins["change-detection"] = (function() {
     }, trial.timeout);
 
     const handleSpacePress = () => {
-      goToClickOnChangeStep();
+      if (switchingImages) {
+        goToClickOnChangeStep();
+      }
     };
 
     const keyboardListener = jsPsych.pluginAPI.getKeyboardResponse({
       callback_function: handleSpacePress,
       valid_responses: ['space'],
       rt_method: 'date',
-      persist: false,
+      persist: true,
       allow_held_key: false
     });
-
-    var trial_data = {
-      parameter_name: "parameter value"
-    };
   };
 
   return plugin;

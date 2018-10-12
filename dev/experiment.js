@@ -128,13 +128,17 @@ function runExperiment(trials, workerId, assignmentId, hitId, PORT, FULLSCREEN) 
       stimulus: stimulus,
       unmodified_image: `images/${image}-a.jpg`,
       modified_image: `images/${image}-b.jpg`,
-      interval_duration: 1600,
+      image_interval_duration: 240,
+      white_screen_interval_duration: 80,
+      initial_white_screen_duration: 1000,
+      initial_fixation_duration: 3000,
       timeout: 60000,
 
       on_finish: function(data) {
         // response.response = String.fromCharCode(data.key_press);
         // response.choice = choices[Number(response.response)-1];
-        response.response = data.response;
+        response.x = data.x;
+        response.y = data.y;
         response.rt = data.time_elapsed;
         response.expTimer = data.time_elapsed / 1000;
 

@@ -1,54 +1,33 @@
-## Running Locally
+## Installation
 
 You must have nodjs installed: https://nodejs.org. Make sure Python 2 is installed.
 
-```
-git clone https://github.com/lupyanlab/ChangeDetection
-cd ChangeDetection
+The following are instructions to download and install the repo.
+
+```sh
+git clone https://github.com/lupyanlab/ChangeDetection  
+cd ChangeDetection 
 npm install
-npm start
+pm2 start index.js --name ChangeDetection  
 ```
 
-When making changes, the html and javascript is in the `dev/` directory. To make sure the `prod/` (production) directory is
-updated while editing the `dev/` directory, run the watch command.
+## Development
 
-```
-npm run watch
-```
+If you are working on your local machinese, go to http://localhost:7080.
 
-If you just need to build `prod/` , then use this command:
+If you are working on Sapir, go to http://sapir.psych.wisc.edu/mturk/ChangeDetection /dev.
 
-```
+The static HTML, CSS, and JavaScript files are in the `dev/` directory, and the Node.js API server is located in the root `./index.js` file.
+
+## Production
+
+When you are done, run the following command on Sapir and go to http://sapir.psych.wisc.edu/mturk/ChangeDetection /prod.
+
+```sh
 npm run prod
 ```
 
-Then, go to http://localhost:7080
 
-
-## Switching from CSV to JSON and Vice Versa
+## Switching from CSV to JSON and Vice Versa for Data Collection
 
 Open `fileformat.js` and switch which file format you want the data and demographics in. You **must restart** the node api server (pm2) after making these changes.
-
-## Running on Sapir (PM2)
-
-To run this on Sapir, use [PM2](http://pm2.keymetrics.io/) which is a production process manager for Node.js. PM2 is already installed on Sapir. Currently, only sudo has access.
-
-### Starting Up the Server
-
-```
-pm2 start index.js --name ChangeDetection
-```
-
-### Deleting a Running Server
-
-```
-pm2 delete ChangeDetection
-```
-
-### Checking on All Servers
-
-```
-pm2 status
-```
-
-When renaming the folder (especially index.js), make sure to delete the old running Node.js instance before starting it again in the new directory. See the on how to delete and start it.

@@ -15,13 +15,13 @@ pm2 start index.js --name ChangeDetection
 
 If you are working on your local machinese, go to http://localhost:7080.
 
-If you are working on Sapir, go to http://sapir.psych.wisc.edu/mturk/ChangeDetection /dev.
+If you are working on Sapir, go to http://sapir.psych.wisc.edu/mturk/ChangeDetection/dev.
 
 The static HTML, CSS, and JavaScript files are in the `dev/` directory, and the Node.js API server is located in the root `./index.js` file.
 
 ## Production
 
-When you are done, run the following command on Sapir and go to http://sapir.psych.wisc.edu/mturk/ChangeDetection /prod.
+When you are done, run the following command on Sapir and go to http://sapir.psych.wisc.edu/mturk/ChangeDetection/prod.
 
 ```sh
 npm run prod

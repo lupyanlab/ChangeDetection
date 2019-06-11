@@ -13,7 +13,7 @@ pm2 start index.js --name ChangeDetection
 
 ## Development
 
-If you are working on your local machinese, go to http://localhost:7080.
+If you are working on your local machinese, go to http://localhost:7150.
 
 If you are working on Sapir, go to http://sapir.psych.wisc.edu/mturk/ChangeDetection/dev.
 

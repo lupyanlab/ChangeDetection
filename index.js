@@ -19,7 +19,7 @@ app.use(compression())
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 
-app.set("port", process.env.PORT || 7080);
+app.set("port", process.env.PORT || 7150);
 
 // Add headers
 app.use(function(req, res, next) {

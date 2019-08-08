@@ -48,13 +48,13 @@ jsPsych.plugins["change-detection"] = (function() {
     ${trial.stimulus}
     <div style="display:flex;justify-content:space-between;flex-direction:column;">
       <h4 id="image-title">...</h4>
-      <div id="crosshair" style="width:1024px;height:768px;display:flex;justify-content: center;align-items: center;border: dashed;">
+      <div id="crosshair" style="width:700px;height:500px;display:flex;justify-content: center;align-items: center;border: dashed;">
         <div class="crosshair-container" style="position: relative;height: 5em;width: 5em;">
           <div class="crosshair-vertical" style="position: absolute;height: 100%;width: 10%;left: 45%;background-color: black;"></div>
           <div class="crosshair-horizantal" style="position: absolute;height: 10%;width: 100%;top: 45%;background-color: black;"></div>
         </div>
       </div>
-      <img id="image" src="${trial.modified_image}" alt="image-stim" style="width:1024px;height:768px;display:none;" ondragstart="return false;" />   
+      <img id="image" src="${trial.modified_image}" alt="image-stim" style="width:100%;height:100%;display:none;" ondragstart="return false;" />   
     </div>`;
 
     const imageTitleElem = document.getElementById('image-title');
@@ -67,7 +67,11 @@ jsPsych.plugins["change-detection"] = (function() {
 
     const showWhiteScreen = () => {
       imageElem.style.display = 'none';
-      imageTimeout = window.setTimeout(switchImage, trial.white_screen_interval_duration);
+      if (trial.white_screen_interval_duration > 0) {
+        imageTimeout = window.setTimeout(switchImage, trial.white_screen_interval_duration);
+      } else {
+        switchImage();
+      }
     };
 
     const switchImage = () => {
@@ -83,28 +87,28 @@ jsPsych.plugins["change-detection"] = (function() {
       imageTimeout = window.setTimeout(switchImage, trial.initial_white_screen_duration);
     }, trial.initial_fixation_duration);
 
-    const goToClickOnChangeStep = () => {
+    const goToClickOnChangeStep = (rt) => {
       window.clearTimeout(imageTimeout);
       crosshairElem.style.display = 'none';
       imageElem.style.display = '';
-      imageElem.setAttribute('src', trial.unmodified_image);
       imageTitleElem.innerHTML = 'Click on what changed..'
       imageElem.addEventListener('click', (e) => {
         const trial_data = {
           x: e.offsetX,
           y: e.offsetY,
+          rt,
         };
         jsPsych.finishTrial(trial_data);
       });
     };
 
     window.setTimeout(() => {
-      goToClickOnChangeStep();
+      goToClickOnChangeStep(trial.timeout);
     }, trial.timeout);
 
-    const handleSpacePress = () => {
+    const handleSpacePress = (info) => {
       if (switchingImages) {
-        goToClickOnChangeStep();
+        goToClickOnChangeStep(info.rt);
       }
     };
 

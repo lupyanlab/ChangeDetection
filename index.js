@@ -5,12 +5,14 @@ const express = require("express");
 const path = require("path");
 const PythonShell = require("python-shell");
 const fs = require("fs");
+const fsPromises = require("fs").promises;
 const csvWriter = require("csv-write-stream");
 const _ = require("lodash");
 const bodyParser = require("body-parser");
 const csv = require("csvtojson");
 const compression = require('compression');
 const jsonfile = require('jsonfile');
+const getPort = require("get-port");
 
 let app = express();
 let writer = csvWriter({ sendHeaders: false });
@@ -19,7 +21,90 @@ app.use(compression())
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 
-app.set("port", process.env.PORT || 7150);
+let batchesCount = { dev: {}, prod: {} };
+
+// create a new file to store category counts
+const batchesCountDevPath = "batchesCounts.dev.csv";
+const batchesCountProdPath = "batchesCounts.prod.csv";
+
+
+function createFolderIfDoesntExist(foldername) {
+  if (!fs.existsSync(path.join(__dirname, foldername))) {
+    fs.mkdirSync(path.join(__dirname, foldername));
+  }
+}
+
+createFolderIfDoesntExist("demographics");
+createFolderIfDoesntExist("trials");
+createFolderIfDoesntExist("data");
+
+(async () => {
+  const PORT = await getPort({ port: getPort.makeRange(7100, 7199) });
+  app.set("port", process.env.PORT || PORT);
+  await fsPromises.writeFile(
+    path.join("dev", "port.js"),
+    `export default ${PORT};\n`
+  );
+
+  createFolderIfDoesntExist("prod");
+  await fsPromises.writeFile(
+    path.join("prod", "port.js"),
+    `export default ${PORT};\n`
+  );
+
+  app.listen(app.get("port"), function() {
+    console.log("Node app is running at http://localhost:" + app.get("port"));
+  });
+})();
+
+
+
+if (fs.existsSync(batchesCountDevPath)) {
+  // Read existing category counts if csv exists.
+  csv({ trim: false })
+    .fromFile(batchesCountDevPath)
+    .on("json", jsonObj => {
+      batchesCount.dev = jsonObj;
+    })
+    .on("done", error => {
+      if (error) throw error;
+      console.log(batchesCount.dev);
+    });
+} else {
+  // Create new csv of category counts if doesn't exist.
+  // Get all categories from image folders.
+  fs.readdirSync(path.join("images_newformat")).forEach(folder => {
+    // Check for image folders that are non-empty
+    batchesCount.dev[path.join("images_newformat", folder)] = 0;
+  });
+  writer = csvWriter({ headers: Object.keys(batchesCount.dev) });
+  writer.pipe(fs.createWriteStream(batchesCountDevPath, { flags: "a" }));
+  writer.write(batchesCount.dev);
+  writer.end();
+}
+
+if (fs.existsSync(batchesCountProdPath)) {
+  // Read existing category counts if csv exists.
+  csv({ trim: false })
+    .fromFile(batchesCountProdPath)
+    .on("json", jsonObj => {
+      batchesCount.prod = jsonObj;
+    })
+    .on("done", error => {
+      if (error) throw error;
+      console.log(batchesCount.prod);
+    });
+} else {
+  // Create new csv of category counts if doesn't exist.
+  // Get all categories from image folders.
+  fs.readdirSync(path.join("images_newformat")).forEach(folder => {
+    batchesCount.prod[path.join("images_newformat", folder)] = 0;
+  });
+  writer = csvWriter({ headers: Object.keys(batchesCount.prod) });
+  writer.pipe(fs.createWriteStream(batchesCountProdPath, { flags: "a" }));
+  writer.write(batchesCount.prod);
+  writer.end();
+}
 
 // Add headers
 app.use(function(req, res, next) {
@@ -41,59 +126,112 @@ app.get("/", function(req, res) {
   res.sendFile(path.join(__dirname + "/dev/index.html"));
 });
 app.use(express.static(__dirname + "/dev"));
-
-app.listen(app.get("port"), function() {
-  console.log("Node app is running at http://localhost:" + app.get("port"));
-});
+app.use(express.static(path.join(__dirname, "images_newformat")));
 
 // POST endpoint for requesting trials
 app.post("/trials", function(req, res) {
   console.log("trials post request received");
   let workerId = req.body.workerId;
-  let setnum = req.body.setnum;
-  console.log("workerId received is " + workerId);
-  console.log("setnum received is " + setnum);
+  let image_file = req.body.image_file;
+  // numTrials must be < number of images available
+  let numTrials = req.body.numTrials;
+  let reset = req.body.reset;
+  const dev = req.body.dev == true;
 
-  if (fs.existsSync("trials/" + workerId + "_trials.csv")) {
-    let trials = [];
-    // Reads generated trial csv file
-    csv()
-      .fromFile("trials/" + workerId + "_trials.csv")
-      // Push all trials to array
-      .on("json", jsonObj => {
-        trials.push(jsonObj);
-      })
-      // Send trials array when finished
-      .on("done", error => {
-        if (error) {
-          res.status(500).send({ success: false });
-          throw error;
-        }
-        res.send({ success: true, trials: trials });
-        console.log("finished parsing csv");
-      });
-  } else {
-    // Runs genTrial python script with workerId and setnum arg
-    PythonShell.defaultOptions = { args: [workerId,setnum] };
-    PythonShell.run("generateTrials.py", function(err, results) {
-      if (err) throw err;
-      let trials = [];
-  
-      // Reads generated trial csv file
-      csv()
-        .fromFile("trials/" + workerId + "_trials.csv")
-        // Push all trials to array
+  const env = dev ? "dev" : "prod";
+  const batchesCountPath = dev ? batchesCountDevPath : batchesCountProdPath;
+  const trialsPath = path.join(__dirname, "trials/", `${workerId}_trials.csv`);
+  const dataPath = path.join(__dirname, "data", `${workerId}_data.csv`);
+
+  console.log("workerId received is " + workerId);
+  console.log("image_file received is " + image_file);
+
+  if (fs.existsSync(trialsPath) && reset == "false") {
+    console.log("Grabbing unfinished trials");
+    const completedImagesPerBatch = {};
+    const trials = [];
+    if (fs.existsSync(dataPath)) {
+      let maxBatchNum = 1;
+      csv({ trim: false })
+        .fromFile(dataPath)
+        .on("json", jsonObj => {
+          if (!(jsonObj.batchFile in completedImagesPerBatch)) {
+            completedImagesPerBatch[jsonObj.batchFile] = new Set();
+          }
+          maxBatchNum = Math.max(jsonObj.batchNum, maxBatchNum);
+          completedImagesPerBatch[jsonObj.batchFile].add(jsonObj.image);
+        })
+        .on("done", error => {
+          csv({ trim: false })
+            .fromFile(trialsPath)
+            .on("json", jsonObj => {
+              if (
+                !(jsonObj.batchFile in completedImagesPerBatch) ||
+                !completedImagesPerBatch[jsonObj.batchFile].has(jsonObj.image)
+              ) {
+                trials.push(jsonObj);
+              }
+            })
+            .on("done", error => {
+              res.send({ success: true, trials, maxBatchNum });
+            });
+        });
+    } else {
+      csv({ trim: false })
+        .fromFile(trialsPath)
         .on("json", jsonObj => {
           trials.push(jsonObj);
         })
-        // Send trials array when finished
         .on("done", error => {
-          if (error) {
-            res.status(500).send({ success: false });
-            throw error;
+          res.send({ success: true, trials, maxBatchNum: 1 });
+        });
+    }
+  } else {
+    console.log("Creating new trials");
+    // Runs genTrial python script with workerId and image_file arg
+    PythonShell.defaultOptions = { args: [workerId,image_file] };
+    PythonShell.run("generateTrials.py", function(err, results) {
+  
+      const batchFile = Object.entries(batchesCount[env]).reduce((a, c) =>
+        Number(a[1]) < Number(c[1]) ? a : c
+      ).slice(0, numTrials);
+  
+      let trials = [];
+      csv({ delimiter: ",", trim: false })
+        .fromFile(path.resolve(__dirname, `${batchFile}.csv`))
+        .on("json", jsonObj => {
+          trials.push({ ...jsonObj, batchFile });
+        })
+        .on("done", error => {
+          batchesCount[env][batchFile] = String(
+            Number(batchesCount[env][batchFile]) + 1
+          );
+  
+          if (!fs.existsSync(batchesCountPath)) {
+            writer = csvWriter({ headers: Object.keys(batchesCount[env]) });
+          } else {
+            writer = csvWriter({ sendHeaders: false });
           }
-          res.send({ success: true, trials: trials });
-          console.log("finished parsing csv");
+  
+          writer.pipe(fs.createWriteStream(batchesCountPath, { flags: "a" }));
+          writer.write(batchesCount[env]);
+          writer.end();
+          
+          // generateTrials.py already did the shuffling
+          // trials = _.shuffle(trials);
+  
+          if (!fs.existsSync(trialsPath)) {
+            writer = csvWriter({ headers: Object.keys(trials[0]) });
+          } else {
+            writer = csvWriter({ sendHeaders: false });
+          }
+  
+          writer.pipe(fs.createWriteStream(trialsPath, { flags: "a" }));
+          trials.forEach(trial => writer.write(trial));
+          writer.end();
+  
+          console.log(trials);
+          res.send({ success: true, trials, maxBatchNum: 1 });
         });
     });
   }

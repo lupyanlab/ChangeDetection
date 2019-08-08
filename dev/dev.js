@@ -5,7 +5,9 @@ $(document).ready(function() {
       let workerId = $("#workerId").val().slice();
       let assignmentId = undefined;
       let hitId = undefined;
+      let reset = $("#reset").val();
+
       $("form").remove();
-      getTrials(workerId, assignmentId, hitId);
+      getTrials(workerId, assignmentId, hitId, true, reset);
   });
 });

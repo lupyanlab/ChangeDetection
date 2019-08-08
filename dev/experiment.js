@@ -1,9 +1,9 @@
 import demographicsQuestions from "./demographics.js";
+import PORT from "./port.js";
 
-const PORT = 7080;
 const FULLSCREEN = false;
 
-export function getTrials(workerId='NA', assignmentId='NA', hitId='NA') {
+export function getTrials(workerId='NA', assignmentId='NA', hitId='NA', dev, reset) {
   
   $("#loading").html('Loading trials... please wait. </br> <img src="img/preloader.gif">')
   
@@ -13,11 +13,10 @@ export function getTrials(workerId='NA', assignmentId='NA', hitId='NA') {
       url: 'http://'+document.domain+':'+PORT+'/trials',
       type: 'POST',
       contentType: 'application/json',
-      data: JSON.stringify({workerId: workerId}),
+      data: JSON.stringify({workerId: workerId,image_file: 'rensink_wolfe_images_bottom_quarter.csv', dev, reset }),
       success: function (data) {
           console.log(data);
           $("#loading").remove();
-  
           runExperiment(data.trials, workerId, assignmentId, hitId, PORT, FULLSCREEN);
       }
   })
@@ -61,31 +60,42 @@ function runExperiment(trials, workerId, assignmentId, hitId, PORT, FULLSCREEN) 
     }
     return false;
   };
-  // // declare the block.
-  // var consent = {
-  //   type: 'external-html',
-  //   url: "./consent.html",
-  //   cont_btn: "start",
-  //   check_fn: check_consent
-  // };
+   // declare the block.
+   var consent = {
+     type: 'external-html',
+     url: "./consent_mturk.html",
+     cont_btn: "start",
+     check_fn: check_consent
+   };
 
-  // timeline.push(consent);
+   timeline.push(consent);
 
   let continue_space =
-    "<div class='right small'>Press SPACE to continue.</div>";
+    "<div class='right small'>Press SPACE to begin.</div>";
 
-  // let instructions = {
-  //   type: "instructions",
-  //   key_forward: 'space',
-  //   key_backward: 'backspace',
-  //   pages: [
-  //     `<p>Your task is to describe the image that is inside the red rectangle so that someone else can pick it out from a selection of the other images when shown your description.  <b>Please make your description as short and simple as possible, while ensuring that the description could not be confused with any of the other images. </b>
-  //     <p><b>If any of the other images are the same, you do not need to worry about distinguishing your description from these items.</b> You will be asked to make a total of 30 descriptions. Please answer carefully to all items. Some images may be simpler to describe than others. Responding randomly or carelessly will result in a decline in payment. At the end, you will get a completion code. <p> <img src="img/demo.png" style="width:355px;height:230px;"> <p>  <b> Example 1 </b> <p> Here you could simply respond:  <b> Circle.  </b>  <p> <img src="img/demo2.png" style="width:355px;height:230px;"> <p> <b> Example 2 </b> <p> For this example you might say:  <b> Three thick vertical lines.  </b> <p> <b> DO NOT use the location of the red rectangle for your description i.e., 'top right'. Your description must be understood even if the order of the images are mixed. </b> <p>
-  //           </p> ${continue_space}`
-  //   ]
-  // };
+  let instructions = {
+    type: "instructions",
+    key_forward: 'space',
+    key_backward: 'backspace',
+//    pages: [
+//		`<p>In your browser, you will see an image of several objects in a circle and the image will appear to blink.</p> 
+//		<p>Somewhere in circle of objects, something will change (e.g. an object change to a different object, change color, move, or disappear entirely).</p>
+//		<p>	Your task is to try to see what changes as fast as you can. </p>
+//		<p><b>As soon as you spot the change, press the spacebar.</b>. <p>
+//		<p>You will then be asked to use the mouse to <b>click on the image to indicate what changed.</b> You will have about a minute to find the change, and after that, make your best guess by clicking somewhere on the picture.
+//		</p> ${continue_space}`
+//    ]
+      pages: [
+    `<p>In your browser, you will see an image of a scene that appears to blink.</p> 
+    <p>Somewhere in the scene, something will change (e.g. an object change to a different object, change color, move, or disappear entirely).</p>
+    <p>	Your task is to try to see what changes as fast as you can. </p>
+    <p><b>As soon as you spot the change, press the spacebar.</b>. <p>
+    <p>You will then be asked to use the mouse to <b>click on the image to indicate what changed.</b> You will have about a minute to find the change, and after that, make your best guess by clicking somewhere on the picture.
+    </p> ${continue_space}`
+    ]
+  };
 
-  // timeline.push(instructions);
+  timeline.push(instructions);
 
   // keeps track of current trial progression
   // and used for the progress bar
@@ -98,9 +108,9 @@ function runExperiment(trials, workerId, assignmentId, hitId, PORT, FULLSCREEN) 
     // trial_number is used for recording
     // responses
     const trial_number = index + 1;
-
-    images.push("images/" + trial.picture + '-a.jpg');
-    images.push("images/" + trial.picture + '-b.jpg');
+      
+    images.push("images_newformat/" + trial.unmodified_image + '.jpg');
+    images.push("images_newformat/" + trial.modified_image + '.jpg');
 
     // Empty Response Data to be sent to be collected
     let response = {
@@ -108,14 +118,16 @@ function runExperiment(trials, workerId, assignmentId, hitId, PORT, FULLSCREEN) 
       assignmentId: assignmentId,
       hitId: hitId,
       set: trial.set,
-      picture: trial.picture,
+      unmod_image: trial.unmodified_image,
+      mod_image: trial.modified_image,
       expTimer: -1,
       response: -1,
       trial_number: trial_number,
       rt: -1
     };
     
-    const image = trial.picture;
+    const unmod_image = trial.unmodified_image;
+    const mod_image = trial.modified_image;
     
     let stimulus = /*html*/`
         <h5 style="text-align:center;margin-top:0;">Trial ${trial_number} of ${num_trials}</h5>
@@ -126,10 +138,10 @@ function runExperiment(trials, workerId, assignmentId, hitId, PORT, FULLSCREEN) 
       type: "change-detection",
 
       stimulus: stimulus,
-      unmodified_image: `images/${image}-a.jpg`,
-      modified_image: `images/${image}-b.jpg`,
+      unmodified_image: `images_newformat/${unmod_image}.jpg`,
+      modified_image: `images_newformat/${mod_image}.jpg`,
       image_interval_duration: 240,
-      white_screen_interval_duration: 80,
+      white_screen_interval_duration: 0,
       initial_white_screen_duration: 1000,
       initial_fixation_duration: 3000,
       timeout: 60000,
@@ -139,7 +151,7 @@ function runExperiment(trials, workerId, assignmentId, hitId, PORT, FULLSCREEN) 
         // response.choice = choices[Number(response.response)-1];
         response.x = data.x;
         response.y = data.y;
-        response.rt = data.time_elapsed;
+        response.rt = data.rt;
         response.expTimer = data.time_elapsed / 1000;
 
         // POST response data to server
@@ -189,21 +201,22 @@ function runExperiment(trials, workerId, assignmentId, hitId, PORT, FULLSCREEN) 
               }
           })
 
-  let endmessage = `Thank you for participating! Your completion code is ${participantID}. Copy and paste this in 
-        MTurk to get paid. 
+  let endmessage = `Thank you for participating! Your completion code is ${participantID}. Copy and paste this in
+        MTurk to receive payment for the HIT. 
 
     <p>
-        If you have any questions or comments, please email hroebuck@wisc.edu.`;
+        If you have any questions or comments, please email ejward@wisc.edu.`;
           jsPsych.endExperiment(endmessage);
       }
   };
+    
+    
   timeline.push(demographicsTrial);
 
-  let endmessage = `Thank you for participating! Your completion code is ${participantID}. Copy and paste this in 
-        MTurk to get paid. 
-
+  let endmessage = `Thank you for participating! Your completion code is ${participantID}. Copy and paste this in
+        MTurk to receive payment for the HIT. 
 <p>
-        If you have any questions or comments, please email hroebuck@wisc.edu.`;
+        If you have any questions or comments, please email ejward@wisc.edu.`;
 
     
   Promise.all(images.map((image, index) => {
@@ -225,7 +238,7 @@ function runExperiment(trials, workerId, assignmentId, hitId, PORT, FULLSCREEN) 
       timeline: timeline,
       fullscreen: FULLSCREEN,
       show_progress_bar: true,
-      auto_update_progress_bar: false
+      auto_update_progress_bar: false,
     });
   }
 }

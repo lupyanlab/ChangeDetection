@@ -24,6 +24,7 @@
     <script src="jspsych-6.0.1/plugins/change-detection.js"></script>
     <script src="https://cdn.jsdelivr.net/lodash/4.17.4/lodash.min.js"></script>
     <link href="jspsych-6.0.1//css/jspsych.css" rel="stylesheet" type="text/css"></link>
+    <script type="module" src="port.js"></script>
     <script src="helpers.js"></script>
     <script type="module" src="demographics.js"></script>
     <script type="module" src="experiment.js"></script>
@@ -39,6 +40,11 @@
     <!-- build:form -->
     <form action="">
         workerId: <input id="workerId" type="text" name="FirstName" value="workerId" autofocus><br>
+        <label for="select" class="control-label">Start over (Reset):</label>
+        <select name="new" id="reset" style="width:20%">
+            <option value="false">false</option>
+            <option value="true">true</option>
+        </select>
 	<input type="submit" value="Submit">
     </form>
     <!-- endbuild -->

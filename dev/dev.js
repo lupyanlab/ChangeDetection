@@ -6,8 +6,9 @@ $(document).ready(function() {
       let assignmentId = undefined;
       let hitId = undefined;
       let reset = $("#reset").val();
+      const numTrials = $("#numTrials").val();
 
       $("form").remove();
-      getTrials(workerId, assignmentId, hitId, true, reset);
+      getTrials(workerId, assignmentId, hitId, true, reset, numTrials);
   });
 });

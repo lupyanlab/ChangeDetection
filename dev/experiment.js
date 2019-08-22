@@ -3,7 +3,7 @@ import PORT from "./port.js";
 
 const FULLSCREEN = false;
 
-export function getTrials(workerId='NA', assignmentId='NA', hitId='NA', dev, reset) {
+export function getTrials(workerId='NA', assignmentId='NA', hitId='NA', dev, reset, numTrials) {
   
   $("#loading").html('Loading trials... please wait. </br> <img src="img/preloader.gif">')
   
@@ -13,7 +13,7 @@ export function getTrials(workerId='NA', assignmentId='NA', hitId='NA', dev, res
       url: 'http://'+document.domain+':'+PORT+'/trials',
       type: 'POST',
       contentType: 'application/json',
-      data: JSON.stringify({workerId: workerId,image_file: 'rensink_wolfe_images_bottom_quarter.csv', dev, reset }),
+      data: JSON.stringify({workerId: workerId,image_file: 'rensink_wolfe_images_newformat.csv', dev, reset, numTrials }),
       success: function (data) {
           console.log(data);
           $("#loading").remove();
@@ -109,8 +109,8 @@ function runExperiment(trials, workerId, assignmentId, hitId, PORT, FULLSCREEN) 
     // responses
     const trial_number = index + 1;
       
-    images.push("images_newformat/" + trial.unmodified_image + '.jpg');
-    images.push("images_newformat/" + trial.modified_image + '.jpg');
+    images.push('http://'+document.domain+':'+PORT+'/' + trial.image + "/" + trial.unmodified_image + '.jpg');
+    images.push('http://'+document.domain+':'+PORT+'/' + trial.image + "/" + trial.modified_image + '.jpg');
 
     // Empty Response Data to be sent to be collected
     let response = {
@@ -138,8 +138,8 @@ function runExperiment(trials, workerId, assignmentId, hitId, PORT, FULLSCREEN) 
       type: "change-detection",
 
       stimulus: stimulus,
-      unmodified_image: `images_newformat/${unmod_image}.jpg`,
-      modified_image: `images_newformat/${mod_image}.jpg`,
+      unmodified_image: 'http://'+document.domain+':'+PORT+'/' + trial.image + "/" +`${unmod_image}.jpg`,
+      modified_image: 'http://'+document.domain+':'+PORT+'/' + trial.image + "/" +`${mod_image}.jpg`,
       image_interval_duration: 240,
       white_screen_interval_duration: 0,
       initial_white_screen_duration: 1000,

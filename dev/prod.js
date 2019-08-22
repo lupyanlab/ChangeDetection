@@ -5,6 +5,7 @@ $(document).ready(function(){
     let assignmentId = undefined;
     let hitId = undefined;
     let reset = $.urlParam("newSet") || "false";
+    let numTrials = $.urlParam("numTrials") || 0;
 
-    getTrials(workerId, assignmentId, hitId, false, reset);    
+    getTrials(workerId, assignmentId, hitId, false, reset, numTrials);    
 });

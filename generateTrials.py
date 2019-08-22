@@ -24,7 +24,7 @@ def generateTrials(workerId, image_file, numTrials):
         # list of tuple (stim, count)
         stim_count_list = [(stim, int(count)) for stim, count in zip(stimsLine.split(separator), countsLine.split(separator))]
         # list of stims in ascending sorted order
-
+        # TODO: Randomize stims by count
         all_stims_list = [stim_count[0] for stim_count in stim_count_list]
         stim_list = [stim_count[0] for stim_count in sorted(stim_count_list, key=lambda tuple: tuple[1])]
 
@@ -38,7 +38,7 @@ def generateTrials(workerId, image_file, numTrials):
 
     testFile = open('trials/'+workerId+ '_trials.csv','w')
 
-    header = separator.join(["workerId", "trialNum", "unmodified_image","modified_image"])
+    header = separator.join(["workerId", "trialNum", "unmodified_image","modified_image","image"])
     print >>testFile, header
 
     trials = []
@@ -60,43 +60,28 @@ def generateTrials(workerId, image_file, numTrials):
     random.shuffle(stim_list)
     
     # Practice
-    unmodified_image = "catchCow1"
-    modified_image = "catchCow2"
-    trials.append(separator.join((str(workerId), "p1",unmodified_image,modified_image)))
+    image = "catch_catchCow"
+    unmodified_image = "catch_catchCow-a"
+    modified_image = "catch_catchCow-b"
+    trials.append(separator.join((str(workerId), "p1",unmodified_image,modified_image,image)))
     
-    unmodified_image = "catchAirplane1"
-    modified_image = "catchAirplane2"
-    trials.append(separator.join((str(workerId), "p2",unmodified_image,modified_image)))
+    image = "catch_catchAirplane"
+    unmodified_image = "catch_catchAirplane-a"
+    modified_image = "catch_catchAirplane-b"
+    trials.append(separator.join((str(workerId), "p2",unmodified_image,modified_image,image)))
     
     for trial_num,cur_image in enumerate(stim_list):
-        
-        if image_file == 'rensink_images.csv':
-            unmodified_image = cur_image+"1"
-            modified_image = cur_image+"2"
-        elif image_file == 'object_array_images.csv':
-            unmodified_image = cur_image+"A"
-            modified_image = cur_image+"B"
-        elif image_file in ['rensink_wolfe_images.csv','rensink_wolfe_images_bottom_half.csv','rensink_wolfe_images.csv','rensink_wolfe_images_bottom_half.csv','rensink_wolfe_images_bottom_quarter.csv']:
-            if cur_image.startswith('image'):
-                unmodified_image = cur_image+"-a"
-                modified_image = cur_image+"-b"
-            elif "_present_" in cur_image: #wolfe stims
-                unmodified_image = cur_image
-                modified_image = cur_image.replace("present","absent")
-            elif "_in_" in cur_image: #wolfe stims
-                unmodified_image = cur_image
-                modified_image = cur_image.replace("_in_","_neither_")
-            else: #rensink stims
-                unmodified_image = cur_image+"1"
-                modified_image = cur_image+"2"
+        unmodified_image = cur_image+"-a"
+        modified_image = cur_image+"-b"
 
         
-        trials.append(separator.join((str(workerId), str(trial_num+1),unmodified_image,modified_image)))     
+        trials.append(separator.join((str(workerId), str(trial_num+1),unmodified_image,modified_image,cur_image)))     
     
     # Catch
-    unmodified_image = "catchBoat1"
-    modified_image = "catchBoat2"
-    trials.append(separator.join((str(workerId), "catch",unmodified_image,modified_image)))
+    image = "catch_catchBoat"
+    unmodified_image = "catch_catchBoat-a"
+    modified_image = "catch_catchBoat-b"
+    trials.append(separator.join((str(workerId), "catch",unmodified_image,modified_image,image)))
 
     for cur_trial in trials:
         print >>testFile, cur_trial
